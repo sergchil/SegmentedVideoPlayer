@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+    <Space
+            android:id="@+id/space"
+            android:layout_width="50dp"
+            android:layout_height="0dp" />
+
+
+    <SeekBar
+            android:id="@+id/progressbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:paddingStart="0dp"
+            android:paddingLeft="0dp"
+            android:paddingEnd="0dp"
+            android:paddingRight="0dp"
+            android:progressDrawable="@drawable/seek_bar"
+            android:thumb="@null"
+            tools:showIn="@layout/activity_main" />
+
+</FrameLayout>
+
+        

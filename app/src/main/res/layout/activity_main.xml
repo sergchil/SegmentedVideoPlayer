@@ -1,25 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
-
-    <com.google.android.exoplayer2.ui.PlayerView
-        android:id="@+id/playerView"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#000"
-        android:keepScreenOn="true"
-        app:auto_show="true"
-        app:controller_layout_id="@layout/custom_ctrl"
-        app:fastforward_increment="2000"
-        app:hide_on_touch="false"
-        app:resize_mode="fit"
-        app:rewind_increment="2000"
-        app:show_buffering="when_playing"
-        app:show_timeout="0" />
+        tools:context=".MainActivity">
+
+
+    <com.chilisoft.exoplayertest.ExoPlayer.IrisPlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000"
+            android:keepScreenOn="true"
+            app:auto_show="true"
+            app:controller_layout_id="@layout/custom_ctrl"
+            app:fastforward_increment="15000"
+            app:hide_on_touch="false"
+            app:resize_mode="zoom"
+            app:rewind_increment="15000"
+            app:show_buffering="when_playing"
+            app:show_timeout="0" />
+
+
+    <LinearLayout
+            android:id="@+id/progress_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+<!--        <include layout="@layout/progress_item" />-->
+<!--        <include layout="@layout/progress_item" />-->
+<!--        <include layout="@layout/progress_item" />-->
+
+
+
+
+    </LinearLayout>
+
 
 </FrameLayout>

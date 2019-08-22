@@ -1,5 +1,6 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
-    <dimen name="seek_bar_thickness">4dp</dimen>
+    <dimen name="seek_bar_thickness">10dp</dimen>
     <dimen name="seek_bar_thumb_size">20dp</dimen>
+    <dimen name="seek_bar_space">2dp</dimen>
 </resources>

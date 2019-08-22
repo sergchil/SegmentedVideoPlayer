@@ -6,7 +6,6 @@
         android:layout_height="match_parent"
         tools:context=".MainActivity">
 
-
     <com.chilisoft.exoplayertest.ExoPlayer.IrisPlayerView
             android:id="@+id/playerView"
             android:layout_width="match_parent"
@@ -19,24 +18,27 @@
             app:hide_on_touch="false"
             app:resize_mode="zoom"
             app:rewind_increment="15000"
-            app:show_buffering="when_playing"
+            app:show_buffering="never"
             app:show_timeout="0" />
 
-
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/progress_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingTop="12dp"
+            android:paddingRight="8dp"
+            app:divider="@drawable/empty_tall_divider"
+            app:showDividers="middle">
 
-<!--        <include layout="@layout/progress_item" />-->
-<!--        <include layout="@layout/progress_item" />-->
-<!--        <include layout="@layout/progress_item" />-->
+
+        <!--                <include layout="@layout/progress_item2" />-->
+        <!--                <include layout="@layout/progress_item2" />-->
+        <!--                <include layout="@layout/progress_item2" />-->
 
 
-
-
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
 
 </FrameLayout>

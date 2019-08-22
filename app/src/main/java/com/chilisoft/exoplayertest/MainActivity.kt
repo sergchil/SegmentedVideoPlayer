@@ -1,11 +1,10 @@
 package com.chilisoft.exoplayertest
 
 import android.os.Bundle
-import android.os.Handler
 import android.view.LayoutInflater
 import android.view.MotionEvent
-import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player
@@ -19,7 +18,6 @@ import com.google.android.exoplayer2.upstream.RawResourceDataSource
 import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.custom_ctrl.view.*
-import kotlinx.android.synthetic.main.progress_item.view.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -38,6 +36,7 @@ class MainActivity : AppCompatActivity() {
         rawDataSource.open(DataSpec(RawResourceDataSource.buildRawResourceUri(R.raw.post_training)))
 
 
+
         player = ExoPlayerFactory.newSimpleInstance(this)
 
         playerView.player = player
@@ -49,18 +48,13 @@ class MainActivity : AppCompatActivity() {
         player.volume = 0f
         player.playWhenReady = true
 
-        val progresItems = ArrayList<View>()
+        val progresItems = ArrayList<ProgressBar>()
         val chunkCount = 3
 
         // add progress bars
         for (i in 0 until chunkCount) {
-            val progressItem = LayoutInflater.from(this).inflate(R.layout.progress_item, progress_container, false)
-            progressItem.progressbar.tag = i
-            if (i == 0) {
-                progressItem.space.visibility = View.GONE
-            }
+            val progressItem = LayoutInflater.from(this).inflate(R.layout.progress_item2, progress_container, false) as ProgressBar
             progresItems.add(progressItem)
-
             (progress_container as ViewGroup).addView(progressItem)
         }
 
@@ -77,11 +71,11 @@ class MainActivity : AppCompatActivity() {
                     seekPoints.add(chunk)
                     seekPoints.add(chunk * 2)
                     seekPoints.add(chunk * 3)
-                    progresItems.map { it.progressbar }.forEach { it.max = chunk }
+                    progresItems.forEach { it.max = chunk }
                 }
 
                 if (playbackState == STATE_ENDED) {
-                    progresItems.map { it.progressbar }.forEach { it.progress = player.duration.toInt() / chunkCount }
+                    progresItems.forEach { it.progress = player.duration.toInt() / chunkCount }
                 }
             }
         })
@@ -100,16 +94,14 @@ class MainActivity : AppCompatActivity() {
             // if seeks forward from middle, set to max
             progresItems
                 .take(index)
-                .map { it.progressbar }
                 .forEach { it.progress = chunk }
 
             // if seeks backward from middle, set to min
             progresItems
                 .takeLast(max(progresItems.size - 1 - index, 0))
-                .mapNotNull { it.progressbar }
                 .forEach { it.progress = 0 }
 
-            progresItems[index].progressbar.progress = progress
+            progresItems[index].progress = progress
         }
 
         playerView.exo_ffwd.setOnClickListener {
@@ -148,6 +140,4 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-
-
 }

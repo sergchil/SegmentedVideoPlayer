@@ -4,11 +4,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.Player.STATE_READY
+import com.google.android.exoplayer2.Player.*
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DataSpec
@@ -18,6 +19,7 @@ import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.progress_item.view.*
 import kotlin.math.max
+import kotlin.math.min
 
 
 class MainActivity : AppCompatActivity() {
@@ -57,12 +59,15 @@ class MainActivity : AppCompatActivity() {
 
 
         for (i in 0 until chunkCount) {
-            val progressItem = LayoutInflater.from(this).inflate(R.layout.progress_item, progress_container, true)
+            val progressItem = LayoutInflater.from(this).inflate(R.layout.progress_item,progress_container, false)
             progressItem.progressbar.tag = i
             if (i == 0) {
                 progressItem.space.visibility = View.GONE
             }
             progresItems.add(progressItem)
+
+            (progress_container as ViewGroup).addView(progressItem)
+
         }
 
 
@@ -70,53 +75,53 @@ class MainActivity : AppCompatActivity() {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 super.onPlayerStateChanged(playWhenReady, playbackState)
 
-
-//                if (playbackState == STATE_READY) {
-//                    progresItems.map { it.progressbar }.forEach { it.max = player.duration.toInt()/chunkCount }
-//
+//                if (playbackState == STATE_IDLE) {
+//                    progresItems.map { it.progressbar }.forEach { it.progress = player.duration.toInt()/chunkCount }
 //                }
+
+                if (playbackState == STATE_READY) {
+                    progresItems.map { it.progressbar }.forEach { it.max = player.duration.toInt()/chunkCount }
+                }
+
+                if (playbackState == STATE_ENDED) {
+                    progresItems.map { it.progressbar }.forEach { it.progress = player.duration.toInt()/chunkCount }
+                }
             }
         })
 
         playerView.controller?.setProgressUpdateListener { position, bufferedPosition ->
             val chunk = player.duration.toInt()/chunkCount
+
             if (chunk == 0) return@setProgressUpdateListener
 
 
-            progresItems.map { it.progressbar }.forEach { it.max = chunk }
+//            progresItems.map { it.progressbar }.forEach { it.max = chunk }
+            val index = position.toInt()/chunk
+            val progress = position.toInt().rem(chunk)
 
-            progresItems.map { it.progressbar }.forEachIndexed { index, seekBar ->
+            if (index > progresItems.size - 1) return@setProgressUpdateListener
 
-                if (position in index * chunk..chunk) {
+            progresItems
+                .take(index)
+                .map { it.progressbar }
+                .forEach { it.progress = chunk }
 
-                }
-                seekBar.progress = max(position.toInt().div(chunk), position.toInt())
-                println(seekBar.tag as? Int)
-            }
+            progresItems
+                .takeLast(max(progresItems.size - 1 - index, 0))
+                .mapNotNull { it.progressbar }
+                .forEach { it.progress = 0 }
 
-//            if (position in 0..chunk) {
-//                progressbar1.progress = min(position.toInt(), chunk)
-//            } else if (position > chunk) {
-//                progressbar1.progress = chunk
-//            } else {
-//                progressbar1.progress = 0
+//            for (i in 0..index) {
+//                progresItems[i].progressbar.progress = chunk
 //            }
 //
-//            if (position in chunk..chunk * 2) {
-//                progressbar2.progress = min(position.toInt() - chunk, chunk)
-//            } else if (position > chunk * 2) {
-//                progressbar2.progress = chunk
-//            } else {
-//                progressbar2.progress = 0
+//            for (i in index until progresItems.size) {
+//                progresItems[i].progressbar.progress = 0
 //            }
-//
-//            if (position in chunk..chunk * 3) {
-//                progressbar3.progress = min(position.toInt() - chunk - chunk, chunk)
-//            } else if (position > chunk * 3) {
-//                progressbar3.progress = chunk
-//            } else {
-//                progressbar3.progress = 0
-//            }
+
+            println("index = $index   progress = $chunk / $progress")
+
+            progresItems[min(index, progresItems.size - 1)].progressbar.progress = progress
         }
 
 

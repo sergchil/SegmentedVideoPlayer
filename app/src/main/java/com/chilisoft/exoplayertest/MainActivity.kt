@@ -3,6 +3,7 @@ package com.chilisoft.exoplayertest
 import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
 
         player = ExoPlayerFactory.newSimpleInstance(this)
+
         playerView.player = player
         val dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "ExoTest"))
         val videoSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(rawDataSource.uri)
@@ -84,6 +86,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        playerView.controller?.setTimeBarMinUpdateInterval(17)
         playerView.controller?.setProgressUpdateListener { position, bufferedPosition ->
             val chunk = player.duration.toInt() / chunkCount
 
@@ -128,6 +131,22 @@ class MainActivity : AppCompatActivity() {
             val progress = max(0, seekPoints[index].toLong())
             player.seekTo(progress)
         }
+
+        // could be also exo_overlay
+        playerView.exo_pause?.setOnTouchListener { view, motionEvent ->
+            if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                player.playWhenReady = false
+                return@setOnTouchListener true
+            }
+
+            if (motionEvent.action== MotionEvent.ACTION_UP) {
+                player.playWhenReady = true
+                return@setOnTouchListener true
+            }
+
+            false
+        }
+
     }
 
 

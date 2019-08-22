@@ -1,52 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <com.google.android.exoplayer2.ui.DefaultTimeBar
-        android:id="@id/exo_progress"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
-        app:bar_height="2dp"
-        app:buffered_color="#B2FFFFFF"
-        app:played_color="#FFF"
-        app:scrubber_disabled_size="0dp"
-        app:scrubber_dragged_size="0dp"
-        app:scrubber_enabled_size="0dp"
-        app:unplayed_color="#B2FFFFFF" />
-
-
-    <!--style="@style/ExoMediaButton.Play"-->
-    <ImageButton
-        android:id="@id/exo_play"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:background="@android:color/transparent" />
+        android:layout_height="match_parent">
 
     <ImageButton
-        android:id="@id/exo_pause"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:background="@android:color/transparent" />
-
-
-    <ImageButton
-        android:id="@id/exo_rew"
-        android:layout_width="100dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="?selectableItemBackground" />
+            android:id="@id/exo_pause"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:background="@android:color/transparent"
+            tools:background="#75FF0000" />
 
     <ImageButton
-        android:id="@id/exo_ffwd"
-        android:layout_width="100dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:background="?selectableItemBackground" />
+            android:id="@id/exo_rew"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="start"
+            android:background="?selectableItemBackground"
+            tools:background="#6A00FF00" />
+
+    <ImageButton
+            android:id="@id/exo_ffwd"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="?selectableItemBackground"
+            tools:background="#6A00FF00" />
 
 </FrameLayout>

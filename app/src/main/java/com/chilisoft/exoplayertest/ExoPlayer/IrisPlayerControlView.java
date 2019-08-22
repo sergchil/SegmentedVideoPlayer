@@ -234,7 +234,7 @@ public class IrisPlayerControlView extends FrameLayout {
 
   private static final long MAX_POSITION_FOR_SEEK_TO_PREVIOUS = 3000;
   /** The maximum interval between time bar position updates. */
-  private static final int MAX_UPDATE_INTERVAL_MS = 1000;
+  private static final int MAX_UPDATE_INTERVAL_MS = 200;
 
   private final ComponentListener componentListener;
   private final View previousButton;

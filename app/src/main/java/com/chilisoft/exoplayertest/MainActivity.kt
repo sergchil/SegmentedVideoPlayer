@@ -7,6 +7,9 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnLayout
+import com.chilisoft.exoplayertest.ExoPlayer.IrisExoPlayer
+import com.chilisoft.exoplayertest.ExoPlayer.IrisPlayerControlView
+import com.chilisoft.exoplayertest.ExoPlayer.SegmentedVideoPlayer
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Player.STATE_ENDED
@@ -26,22 +29,53 @@ class MainActivity : AppCompatActivity() {
     private lateinit var player: SimpleExoPlayer
     //    private val videoUri = "https://ak2.picdn.net/shutterstock/videos/30189112/preview/stock-footage-angry-businessman-looks-at-statistics-in-tablet-and-yells-at-employees-on-the-phone.webm"
     private val videoUri = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
+    private lateinit var segmentedVideoPlayer: SegmentedVideoPlayer
 
     val seekPoints = mutableListOf<Int>()
+    val progresItems = ArrayList<ProgressBar>()
+
     val CHUNK_COUNT = 3
     val PAUSE_DELAY = 150L
+
+    val progressUpdateListener: IrisPlayerControlView.ProgressUpdateListener by lazy {
+        IrisPlayerControlView.ProgressUpdateListener(::onUpdateProgress)
+    }
+
+    private fun onUpdateProgress(position: Long, bufferedPosition: Long) {
+        val segmentDuration = player.segmentDuration(CHUNK_COUNT)
+
+        if (segmentDuration == 0) return
+
+        val index = position.toInt() / segmentDuration
+        val progress = position.toInt().rem(segmentDuration)
+
+        if (index > progresItems.size - 1) return
+
+        // if seeks forward from middle, set to max
+        progresItems
+            .take(index)
+            .forEach { it.progress = segmentDuration }
+
+        // if seeks backward from middle, set to min
+        progresItems
+            .takeLast(max(progresItems.size - 1 - index, 0))
+            .forEach { it.progress = 0 }
+
+        progresItems[index].progress = progress
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        player = ExoPlayerFactory.newSimpleInstance(this)
+        segmentedVideoPlayer = SegmentedVideoPlayer(player, playerView)
+
+
         val rawDataSource = RawResourceDataSource(this)
         rawDataSource.open(DataSpec(RawResourceDataSource.buildRawResourceUri(R.raw.test_footage)))
 
-
-
-        player = ExoPlayerFactory.newSimpleInstance(this)
-
-        playerView.player = player
         val dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "ExoTest"))
         val videoSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(rawDataSource.uri)
 //        val videoSource = HlsMediaSource.Factory(dataSourceFactory).createMediaSource(videoUri.toUri())
@@ -50,9 +84,6 @@ class MainActivity : AppCompatActivity() {
         player.prepare(videoSource)
         player.volume = 0f
         player.playWhenReady = true
-
-        val progresItems = ArrayList<ProgressBar>()
-
 
         // add progress bars
         for (i in 0 until CHUNK_COUNT) {
@@ -67,45 +98,25 @@ class MainActivity : AppCompatActivity() {
                 super.onPlayerStateChanged(playWhenReady, playbackState)
 
                 if (playbackState == STATE_READY) {
-                    val chunk = player.duration.toInt() / CHUNK_COUNT
-                    // todo find proper way to do this
+                    playerView.controller?.setTimeBarMinUpdateInterval(17) // HIGH CPU USAGE !!!
+                    playerView.controller?.setProgressUpdateListener(progressUpdateListener)
+
+                    val segmentDuration = player.segmentDuration(CHUNK_COUNT).toInt()
                     seekPoints.clear()
-                    seekPoints.add(0) // for rewind
-                    seekPoints.add(chunk)
-                    seekPoints.add(chunk * 2)
-                    seekPoints.add(chunk * 3)
-                    progresItems.forEach { it.max = chunk }
+                    for (i in 0..CHUNK_COUNT) {
+                        seekPoints.add(i * segmentDuration) // first is always 0 for rewind
+                    }
+
+                    progresItems.forEach { it.max = player.maxProgress() }
                 }
 
                 if (playbackState == STATE_ENDED) {
-                    progresItems.forEach { it.progress = player.duration.toInt() / CHUNK_COUNT }
+                    progresItems.forEach { it.progress = player.maxProgress() }
                 }
             }
         })
 
-        playerView.controller?.setTimeBarMinUpdateInterval(17)
-        playerView.controller?.setProgressUpdateListener { position, bufferedPosition ->
-            val chunk = player.duration.toInt() / CHUNK_COUNT
 
-            if (chunk == 0) return@setProgressUpdateListener
-
-            val index = position.toInt() / chunk
-            val progress = position.toInt().rem(chunk)
-
-            if (index > progresItems.size - 1) return@setProgressUpdateListener
-
-            // if seeks forward from middle, set to max
-            progresItems
-                .take(index)
-                .forEach { it.progress = chunk }
-
-            // if seeks backward from middle, set to min
-            progresItems
-                .takeLast(max(progresItems.size - 1 - index, 0))
-                .forEach { it.progress = 0 }
-
-            progresItems[index].progress = progress
-        }
 
         playerView.doOnLayout {
             val center = it.width / 2
@@ -163,4 +174,17 @@ class MainActivity : AppCompatActivity() {
         val progress = max(0, seekPoints[index].toLong())
         player.seekTo(progress)
     }
+
+    fun SimpleExoPlayer.currentProgress(segmentCount: Int): Int {
+        return (this.currentPosition * 100 / segmentDuration(segmentCount)).toInt()
+    }
+
+    fun SimpleExoPlayer.segmentDuration(segmentCount: Int): Long {
+        return this.duration / segmentCount
+    }
+
+    fun SimpleExoPlayer.maxProgress(): Int {
+        return 100
+    }
+
 }

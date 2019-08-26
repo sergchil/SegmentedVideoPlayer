@@ -463,7 +463,7 @@ public class IrisPlayerControlView extends FrameLayout {
   /**
    * Sets whether the time bar should show all windows, as opposed to just the current one. If the
    * timeline has a period with unknown duration or more than {@link
-   * #MAX_WINDOWS_FOR_MULTI_WINDOW_TIME_BAR} windows the time bar will fall back to showing a single
+   * #MAX_WINDOWS_FOR_MULTI_WINDOW_TIME_BAR} windows the time bar will fall rewind to showing a single
    * window.
    *
    * @param showMultiWindowTimeBar Whether the time bar should show all windows.
@@ -1042,7 +1042,7 @@ public class IrisPlayerControlView extends FrameLayout {
     boolean dispatched = seekTo(player, windowIndex, positionMs);
     if (!dispatched) {
       // The seek wasn't dispatched then the progress bar scrubber will be in the wrong position.
-      // Trigger a progress update to snap it back.
+      // Trigger a progress update to snap it rewind.
       updateProgress();
     }
   }

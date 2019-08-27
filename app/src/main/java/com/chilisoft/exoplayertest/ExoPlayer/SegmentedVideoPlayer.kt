@@ -1,10 +1,14 @@
 package com.chilisoft.exoplayertest.ExoPlayer
 
 import android.content.Context
-import android.net.Uri
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.annotation.RawRes
+import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.net.toUri
+import androidx.core.view.doOnLayout
 import com.chilisoft.exoplayertest.R
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -15,20 +19,50 @@ import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.RawResourceDataSource
 import com.google.android.exoplayer2.util.Util
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
-class SegmentedVideoPlayer(var player: SimpleExoPlayer, var playerView: IrisPlayerView) {
-    val segments = mutableListOf<Int>()
-    val progresItems = ArrayList<ProgressBar>()
+class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerView, progressContainer: LinearLayoutCompat) {
+    val PAUSE_DELAY = 150L
+
+    private val segments = mutableListOf<Int>()
+    private val progresItems = ArrayList<ProgressBar>()
     private val videoUri = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
-    val segmentsCount = 1
-    val dataSourceFactory : DefaultDataSourceFactory
-    val progressUpdateListener: IrisPlayerControlView.ProgressUpdateListener by lazy {
+    private val segmentsCount = 3
+    private val dataSourceFactory: DefaultDataSourceFactory
+    private val progressUpdateListener: IrisPlayerControlView.ProgressUpdateListener by lazy {
         IrisPlayerControlView.ProgressUpdateListener(::onUpdateProgress)
+    }
+
+    // delayed
+    val delayedPauseRunnable = Runnable {
+        pouse()
+    }
+
+    fun pouse() {
+        player.playWhenReady = false
+    }
+
+    fun play() {
+        player.playWhenReady = true
+    }
+
+    fun forward() {
+        val chunk = player.duration.toInt() / segmentsCount
+        val indexDirty = min(player.currentPosition.toInt() / chunk, segments.size - 1).inc()
+        val index = min(indexDirty, segments.size - 1)
+        player.seekTo(segments[index].toLong())
+    }
+
+    fun rewind() {
+        val chunk = player.duration.toInt() / segmentsCount
+        var index = min(player.currentPosition.toInt() / chunk, segments.size)
+        index = max(0, index.dec())
+        val progress = max(0, segments[index].toLong())
+        player.seekTo(progress)
     }
 
     init {
@@ -48,19 +82,63 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, var playerView: IrisPlay
 
 
         player.onReady {
+            playerView.controller?.setTimeBarMinUpdateInterval(17) // HIGH CPU USAGE !!!
+            playerView.controller?.setProgressUpdateListener(progressUpdateListener)
 
+            val segmentDuration = getSegmentDuration()
+            segments.clear()
+            for (i in 0..segmentsCount) {
+                segments.add(i * segmentDuration) // first is always 0 for rewind
+            }
+
+            progresItems.forEach { it.max = getSegmentDuration() }
         }
 
         player.onPlaybackEnd {
+            progresItems.forEach { it.progress = getSegmentDuration() }
+        }
 
+
+        playerView.doOnLayout {
+            val center = it.width / 2
+
+            it.setOnTouchListener { view, motionEvent ->
+
+                if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                    view.removeCallbacks(delayedPauseRunnable)
+                    view.postDelayed(delayedPauseRunnable, PAUSE_DELAY) // pause after PAUSE_DELAY
+                }
+
+                if (motionEvent.action == MotionEvent.ACTION_UP) {
+                    view.removeCallbacks(delayedPauseRunnable)
+
+                    val duration = motionEvent.eventTime - motionEvent.downTime
+
+                    if (duration <= PAUSE_DELAY) {
+                        if (motionEvent.x.toInt() in 0..center) rewind() else forward()
+                    } else {
+                        play()
+                    }
+
+                    return@setOnTouchListener true
+                }
+
+                true
+            }
+        }
+
+        // add progress bars
+        for (i in 0 until segmentsCount) {
+            val progressItem = LayoutInflater.from(context).inflate(R.layout.progress_bar_item, progressContainer, false) as ProgressBar
+            progresItems.add(progressItem)
+            (progressContainer as ViewGroup).addView(progressItem)
         }
 
 
     }
 
 
-
-    fun createHlsMediaSource(url: String) :MediaSource{
+    fun createHlsMediaSource(url: String): MediaSource {
         return HlsMediaSource.Factory(dataSourceFactory).createMediaSource(url.toUri())
     }
 
@@ -101,14 +179,10 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, var playerView: IrisPlay
         return player.duration.toInt() / segmentsCount
     }
 
-    fun getMaxProgress(): Int {
-        return 100
-    }
 
 
 
-
-    fun SimpleExoPlayer.onReady(listener:() -> Unit) {
+    fun SimpleExoPlayer.onReady(listener: SimpleExoPlayer.() -> Unit) {
 
         this.addListener(object : Player.EventListener {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
@@ -122,7 +196,7 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, var playerView: IrisPlay
 
     }
 
-    fun <T> SimpleExoPlayer.onPlaybackEnd(onPlaybackEnd: T.()->Unit) {
+    fun SimpleExoPlayer.onPlaybackEnd(onPlaybackEnd: SimpleExoPlayer.() -> Unit) {
 
         this.addListener(object : Player.EventListener {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
@@ -134,30 +208,6 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, var playerView: IrisPlay
 
         })
 
-    }
-
-    class EventListener : Player.EventListener {
-
-        override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
-            super.onPlayerStateChanged(playWhenReady, playbackState)
-
-            if (playbackState == Player.STATE_READY) {
-                playerView.controller?.setTimeBarMinUpdateInterval(17) // HIGH CPU USAGE !!!
-                playerView.controller?.setProgressUpdateListener(progressUpdateListener)
-
-                val segmentDuration = player.segmentDuration(CHUNK_COUNT).toInt()
-                seekPoints.clear()
-                for (i in 0..CHUNK_COUNT) {
-                    seekPoints.add(i * segmentDuration) // first is always 0 for rewind
-                }
-
-                progresItems.forEach { it.max = player.maxProgress() }
-            }
-
-            if (playbackState == Player.STATE_ENDED) {
-                progresItems.forEach { it.progress = player.maxProgress() }
-            }
-        }
     }
 
 

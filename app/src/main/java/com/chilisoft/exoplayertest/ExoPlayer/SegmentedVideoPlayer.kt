@@ -19,6 +19,7 @@ import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.RawResourceDataSource
 import com.google.android.exoplayer2.util.Util
+import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.math.min
 
@@ -26,46 +27,37 @@ import kotlin.math.min
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
 class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerView, progressContainer: LinearLayoutCompat) {
-    val PAUSE_DELAY = 150L
+    var pauseDelay = 150L
+    var segments = mutableListOf<Long>()
+    private val segmentsPair = mutableListOf<Pair<Long, Long>>()
+    var videoUri = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
+    var segmentsCount = 3
+    var autoPlay = true
 
-    private val segments = mutableListOf<Int>()
-    private val progresItems = ArrayList<ProgressBar>()
-    private val videoUri = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
-    private val segmentsCount = 3
+    val progressItems = ArrayList<ProgressBar>()
     private val dataSourceFactory: DefaultDataSourceFactory
     private val progressUpdateListener: IrisPlayerControlView.ProgressUpdateListener by lazy {
         IrisPlayerControlView.ProgressUpdateListener(::onUpdateProgress)
     }
 
-    // delayed
-    val delayedPauseRunnable = Runnable {
-        pouse()
-    }
-
-    fun pouse() {
-        player.playWhenReady = false
-    }
-
-    fun play() {
-        player.playWhenReady = true
-    }
-
-    fun forward() {
-        val chunk = player.duration.toInt() / segmentsCount
-        val indexDirty = min(player.currentPosition.toInt() / chunk, segments.size - 1).inc()
-        val index = min(indexDirty, segments.size - 1)
-        player.seekTo(segments[index].toLong())
-    }
-
-    fun rewind() {
-        val chunk = player.duration.toInt() / segmentsCount
-        var index = min(player.currentPosition.toInt() / chunk, segments.size)
-        index = max(0, index.dec())
-        val progress = max(0, segments[index].toLong())
-        player.seekTo(progress)
-    }
-
     init {
+        segments.add(TimeUnit.SECONDS.toMillis(5))
+        segments.add(TimeUnit.SECONDS.toMillis(15))
+        segments.add(TimeUnit.SECONDS.toMillis(10))
+
+        // convert from [5,15,10] -> [{0,5}, {5,20}, {20,30}]
+        segments.mapIndexedTo(segmentsPair)  { index: Int, _: Long ->
+            val lastIndex = index - 1
+            if (lastIndex < 0) {
+                return@mapIndexedTo (0L to segments[index])
+            }
+
+            val start = segmentsPair[lastIndex].second
+            val end = start + segments[index]
+
+            return@mapIndexedTo (start to end)
+        }
+
         playerView.player = player
         val context = playerView.context
 
@@ -78,8 +70,7 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
         }
 
         player.prepare(videoSource)
-        player.playWhenReady = true
-
+        player.playWhenReady = autoPlay
 
         player.onReady {
             playerView.controller?.setTimeBarMinUpdateInterval(17) // HIGH CPU USAGE !!!
@@ -88,14 +79,14 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
             val segmentDuration = getSegmentDuration()
             segments.clear()
             for (i in 0..segmentsCount) {
-                segments.add(i * segmentDuration) // first is always 0 for rewind
+                segments.add((i * segmentDuration).toLong()) // first is always 0 for rewind
             }
 
-            progresItems.forEach { it.max = getSegmentDuration() }
+            progressItems.forEach { it.max = getSegmentDuration() }
         }
 
         player.onPlaybackEnd {
-            progresItems.forEach { it.progress = getSegmentDuration() }
+            progressItems.forEach { it.progress = getSegmentDuration() }
         }
 
 
@@ -106,7 +97,7 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
 
                 if (motionEvent.action == MotionEvent.ACTION_DOWN) {
                     view.removeCallbacks(delayedPauseRunnable)
-                    view.postDelayed(delayedPauseRunnable, PAUSE_DELAY) // pause after PAUSE_DELAY
+                    view.postDelayed(delayedPauseRunnable, pauseDelay) // pause after pauseDelay
                 }
 
                 if (motionEvent.action == MotionEvent.ACTION_UP) {
@@ -114,7 +105,7 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
 
                     val duration = motionEvent.eventTime - motionEvent.downTime
 
-                    if (duration <= PAUSE_DELAY) {
+                    if (duration <= pauseDelay) {
                         if (motionEvent.x.toInt() in 0..center) rewind() else forward()
                     } else {
                         play()
@@ -130,7 +121,7 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
         // add progress bars
         for (i in 0 until segmentsCount) {
             val progressItem = LayoutInflater.from(context).inflate(R.layout.progress_bar_item, progressContainer, false) as ProgressBar
-            progresItems.add(progressItem)
+            progressItems.add(progressItem)
             (progressContainer as ViewGroup).addView(progressItem)
         }
 
@@ -156,19 +147,19 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
         val index = position.toInt() / segmentDuration
         val progress = position.toInt().rem(segmentDuration)
 
-        if (index > progresItems.size - 1) return
+        if (index > progressItems.size - 1) return
 
         // if seeks forward from middle, set to max
-        progresItems
+        progressItems
             .take(index)
             .forEach { it.progress = segmentDuration }
 
         // if seeks backward from middle, set to min
-        progresItems
-            .takeLast(max(progresItems.size - 1 - index, 0))
+        progressItems
+            .takeLast(max(progressItems.size - 1 - index, 0))
             .forEach { it.progress = 0 }
 
-        progresItems[index].progress = progress
+        progressItems[index].progress = progress
     }
 
     fun getCurrentProgress(): Int {
@@ -178,8 +169,6 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
     fun getSegmentDuration(): Int {
         return player.duration.toInt() / segmentsCount
     }
-
-
 
 
     fun SimpleExoPlayer.onReady(listener: SimpleExoPlayer.() -> Unit) {
@@ -208,6 +197,35 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
 
         })
 
+    }
+
+
+    // delayed
+    val delayedPauseRunnable = Runnable {
+        pouse()
+    }
+
+    fun pouse() {
+        player.playWhenReady = false
+    }
+
+    fun play() {
+        player.playWhenReady = true
+    }
+
+    fun forward() {
+        val chunk = player.duration.toInt() / segmentsCount
+        val indexDirty = min(player.currentPosition.toInt() / chunk, segments.size - 1).inc()
+        val index = min(indexDirty, segments.size - 1)
+        player.seekTo(segments[index].toLong())
+    }
+
+    fun rewind() {
+        val chunk = player.duration.toInt() / segmentsCount
+        var index = min(player.currentPosition.toInt() / chunk, segments.size)
+        index = max(0, index.dec())
+        val progress = max(0, segments[index].toLong())
+        player.seekTo(progress)
     }
 
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="seek_bar_background">#80FFFFFF</color>
+    <color name="seek_bar_progress">#FFFFFF</color>
+    <color name="seek_bar_secondary_progress">#3399CC</color>
+</resources>

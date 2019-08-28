@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.chilisoft.exoplayertest.ExoPlayer;
+package com.chilisoft.segmentedexoplayer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -34,7 +34,6 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
-import com.chilisoft.exoplayertest.R;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
 import com.google.android.exoplayer2.PlaybackPreparer;

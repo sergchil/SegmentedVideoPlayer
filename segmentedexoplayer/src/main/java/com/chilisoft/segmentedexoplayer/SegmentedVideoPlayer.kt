@@ -1,4 +1,4 @@
-package com.chilisoft.exoplayertest.ExoPlayer
+package com.chilisoft.segmentedexoplayer
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -8,7 +8,9 @@ import androidx.annotation.RawRes
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.net.toUri
 import androidx.core.view.doOnLayout
-import com.chilisoft.exoplayertest.R
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
@@ -18,18 +20,20 @@ import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.RawResourceDataSource
 import com.google.android.exoplayer2.util.Util
+import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
-class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerView, progressBarContainer: LinearLayoutCompat) {
+class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: IrisPlayerView, progressBarContainer: LinearLayoutCompat, lifecycle: Lifecycle) : LifecycleObserver {
     var pauseDelay = 150L
-    var segments = mutableListOf<Long>() // eg [5,15,10] in SECONDS
-    private val internalSegments = mutableListOf<Segment>()
-    var videoUri = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
+    var segments = mutableListOf<Int>() // eg [5,15,10] in SECONDS
+    var videoUri = ""
     var autoPlay = true
+
+    private val internalSegments = mutableListOf<Segment>()
     private val dataSourceFactory: DefaultDataSourceFactory
     private val progressUpdateListener: IrisPlayerControlView.ProgressUpdateListener by lazy {
         IrisPlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
@@ -37,21 +41,16 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
     private val delayedPauseRunnable = Runnable { pause() }
 
     init {
-
+        lifecycle.addObserver(this) // start listeneing
         val context = playerView.context
         dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, "ExoTest"))
         val layoutInflater = LayoutInflater.from(context)
 
-        // init from outside
-        segments.add(TimeUnit.SECONDS.toMillis(5))
-        segments.add(TimeUnit.SECONDS.toMillis(15))
-        segments.add(TimeUnit.SECONDS.toMillis(10))
 
         // convert from [5,15,10] -> [{0,5000}, {5000,20000}, {20000,30000}]
         progressBarContainer.removeAllViews()
-        segments.mapIndexedTo(internalSegments) { index: Int, _: Long ->
-
-            val duration = segments[index]
+        segments.mapIndexedTo(internalSegments) { index: Int, d: Int ->
+            val duration = TimeUnit.SECONDS.toMillis(d.toLong())
             val start = if (index == 0) 0L else internalSegments[index - 1].end
             val end = start + duration
 
@@ -70,17 +69,20 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
             createHlsMediaSource(videoUri)
         }
 
-        playerView.player = player
-        player.prepare(videoSource)
-        player.playWhenReady = autoPlay
 
-        player.onReady {
-            playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE !!!
-            playerView.controller?.setProgressUpdateListener(progressUpdateListener)
-        }
+        player.apply {
+            playerView.player = this
+            prepare(videoSource)
+            playWhenReady = autoPlay
 
-        player.onPlaybackEnd {
-            internalSegments.forEach(Segment::completed)
+            onReady {
+                playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE !!!
+                playerView.controller?.setProgressUpdateListener(progressUpdateListener)
+            }
+
+            onPlaybackEnd {
+                internalSegments.forEach(Segment::completed)
+            }
         }
 
         // handle touches
@@ -115,6 +117,13 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
         }
 
 
+    }
+
+    // cleanup
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onDestroy() {
+        pause()
+        player.release()
     }
 
     private fun createHlsMediaSource(url: String): MediaSource {
@@ -219,6 +228,10 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
         fun setProgress(progress: Long) {
             progressBar.progress = progress.toInt()
         }
+    }
+
+    fun <T> WeakReference<T>.safe(body: T.() -> Unit) {
+        this.get()?.body()
     }
 
 }

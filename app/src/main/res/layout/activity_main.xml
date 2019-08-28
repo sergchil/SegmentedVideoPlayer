@@ -41,9 +41,9 @@
             app:showDividers="middle">
 
 
-        <!--                <include layout="@layout/progress_bar_item" />-->
-        <!--                <include layout="@layout/progress_bar_item" />-->
-        <!--                <include layout="@layout/progress_bar_item" />-->
+<!--                        <include layout="@layout/progress_bar_item" />-->
+<!--                        <include layout="@layout/progress_bar_item" />-->
+<!--                        <include layout="@layout/progress_bar_item" />-->
 
 
     </androidx.appcompat.widget.LinearLayoutCompat>

@@ -44,19 +44,16 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
 
         // init from outside
         segments.add(TimeUnit.SECONDS.toMillis(5))
-        segments.add(TimeUnit.SECONDS.toMillis(5))
-        segments.add(TimeUnit.SECONDS.toMillis(5))
-        segments.add(TimeUnit.SECONDS.toMillis(5))
-        segments.add(TimeUnit.SECONDS.toMillis(5))
-        segments.add(TimeUnit.SECONDS.toMillis(5))
+        segments.add(TimeUnit.SECONDS.toMillis(15))
+        segments.add(TimeUnit.SECONDS.toMillis(10))
 
         // convert from [5,15,10] -> [{0,5000}, {5000,20000}, {20000,30000}]
         progressBarContainer.removeAllViews()
         segments.mapIndexedTo(internalSegments) { index: Int, _: Long ->
 
             val duration = segments[index]
-            val start = if (index == 0) 0L else internalSegments[index - 1].end + 1
-            val end = start + duration - 1
+            val start = if (index == 0) 0L else internalSegments[index - 1].end
+            val end = start + duration
 
             // add progress bar to container and set max to duration (millis)
             val progressBar = layoutInflater.inflate(R.layout.progress_bar_item, progressBarContainer, false) as ProgressBar
@@ -130,7 +127,7 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
         return ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(rawDataSource.uri ?: return null)
     }
 
-    private fun findSegment(playerPosition: Long): Segment? = internalSegments.firstOrNull { playerPosition in it.start..it.end }
+    private fun findSegment(playerPosition: Long): Segment? = internalSegments.firstOrNull { playerPosition in it.start until it.end }
 
     private fun onUpdateProgress(position: Long) {
         val segment = findSegment(position) ?: return
@@ -157,16 +154,33 @@ class SegmentedVideoPlayer(var player: SimpleExoPlayer, playerView: IrisPlayerVi
     }
 
     private fun forward() {
-        val segment = findSegment(player.currentPosition + 1) ?: return
-        player.seekTo(segment.end)
+        val segment = findSegment(player.currentPosition) ?: return
+        val nextIndex = segment.index + 1
+        val nextSegment = internalSegments.getOrNull(nextIndex)
+        // forward to last segment end
+        nextSegment?.let {
+            player.seekTo(it.start)
+        } ?: run {
+            player.seekTo(segment.end)
+        }
+
     }
 
     // todo improve the logic of quick tapping
     private fun rewind() {
-        val currentSegment = findSegment(player.currentPosition - 1) ?: return
+        val currentSegment = findSegment(player.currentPosition)
+
+        // rewind to last segment start
+        if (currentSegment == null) {
+            player.seekTo(internalSegments.last().start)
+            return
+        }
+
         val previousSegmentIndex = max(0, currentSegment.index - 1)
         val previousSegment = internalSegments[previousSegmentIndex]
+
         player.seekTo(previousSegment.start)
+
     }
 
     private fun SimpleExoPlayer.onReady(listener: SimpleExoPlayer.() -> Unit) {

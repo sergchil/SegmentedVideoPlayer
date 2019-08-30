@@ -1,5 +1,6 @@
 package com.chilisoft.segmentedexoplayer
 
+
 import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
@@ -8,22 +9,18 @@ import android.widget.ProgressBar
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.view.children
 import com.chilisoft.segmentedexoplayer.player.IrisPlayerView
+import com.chilisoft.segmentedexoplayer.player.SegmentedVideoPlayer
+import com.google.android.exoplayer2.ExoPlayerFactory
+import com.google.android.exoplayer2.SimpleExoPlayer
 import kotlinx.android.synthetic.main.player_with_progress.view.*
-import android.R
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
-import sun.jvm.hotspot.utilities.IntArray
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 
-
-
-/**
- * TODO: document your custom view class.
- */
 class SegmentedPlayerView : FrameLayout {
 
+    private lateinit var player: SimpleExoPlayer
     private lateinit var playerView: IrisPlayerView
+    private lateinit var segmentedVideoPlayer: SegmentedVideoPlayer
     private lateinit var progressContainer: LinearLayoutCompat
+
     private var _progressColor: Int = Color.WHITE
     private var progressColor: Int
         get() = _progressColor
@@ -32,7 +29,7 @@ class SegmentedPlayerView : FrameLayout {
             updateProgress()
         }
 
-    private var _progressBackgroundColor: Int = Color.BLACK
+    private var _progressBackgroundColor: Int = Color.RED
     private var progressBackgroundColor: Int
         get() = _progressBackgroundColor
         set(value) {
@@ -94,9 +91,21 @@ class SegmentedPlayerView : FrameLayout {
         get() = _autoPlay
         set(value) {
             _autoPlay = value
-            updatePlayer()
+            segmentedVideoPlayer.autoPlay = value
         }
 
+    var videoUrl: String = ""
+        set(value) {
+            field = value
+            segmentedVideoPlayer.videoUrl = value
+        }
+
+    var segments = mutableListOf<Int>()
+        set(value) {
+            field = value
+            segmentedVideoPlayer.segments = value
+            updateProgress()
+        }
 
     constructor(context: Context) : super(context) {
         init(null, 0)
@@ -120,6 +129,7 @@ class SegmentedPlayerView : FrameLayout {
         progressContainer = view.progress_container
         playerView = view.player_view
 
+
         _progressColor = a.getColor(R.styleable.SegmentedPlayerView_progressColor, progressColor)
         _progressBackgroundColor = a.getColor(R.styleable.SegmentedPlayerView_progressBackgroundColor, progressBackgroundColor)
 
@@ -132,41 +142,41 @@ class SegmentedPlayerView : FrameLayout {
         _progressCornerRadius = a.getDimensionPixelSize(R.styleable.SegmentedPlayerView_progressCornerRadius, progressCornerRadius)
         _autoPlay = a.getBoolean(R.styleable.SegmentedPlayerView_autoPlay, autoPlay)
 
-        val layerDrawable = resources.getDrawable(R.drawable.my_drawable) as LayerDrawable
-        val gradientDrawable = layerDrawable
-            .findDrawableByLayerId(R.id.gradientDrawble) as GradientDrawable
-        gradientDrawable.cornerRadius = 50f
-
         a.recycle()
 
-
-        // Update TextPaint and text measurements from attributes
+        player = ExoPlayerFactory.newSimpleInstance(context)
+        segmentedVideoPlayer = SegmentedVideoPlayer(player, playerView, progress_container, _autoPlay)
         updateProgress()
-        updatePlayer()
     }
 
-    private fun invalidateTextPaintAndMeasurements() {
-//        textPaint.let {
-//            it.textSize = exampleDimension
-//            it.color = exampleColor
-//            textWidth = it.measureText(exampleString)
-//            textHeight = it.fontMetrics.bottom
-//        }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        segmentedVideoPlayer.release()
     }
+
 
     private fun updateProgress() {
-        progressContainer.children
-            .map {
-                it as ProgressBar
-            }
+        // progress bars
+        progressContainer.children.map { it as ProgressBar }
             .forEach {
-                it.progressDrawable
+                it.customize(
+                    _progressColor,
+                    _progressBackgroundColor,
+                    _progressHeight,
+                    _progressCornerRadius
+                )
             }
+
+        // progress container
+        progressContainer.customize(
+            _progressDividerPadding,
+            _progressPaddingLeft,
+            _progressPaddingTop,
+            _progressPaddingRight,
+            _progressPaddingBottom
+        )
+
     }
-
-    private fun updatePlayer() {
-
-    }
-
 
 }

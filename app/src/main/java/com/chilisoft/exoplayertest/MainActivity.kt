@@ -9,23 +9,13 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var player: SimpleExoPlayer
-    private lateinit var segmentedVideoPlayer: SegmentedVideoPlayer
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         setContentView(R.layout.activity_main)
-
-        val segments = mutableListOf(5, 15, 10)
-
-        player = ExoPlayerFactory.newSimpleInstance(this)
-        segmentedVideoPlayer = SegmentedVideoPlayer(player, playerView, progress_container, lifecycle)
-        segmentedVideoPlayer.segments = segments
-        segmentedVideoPlayer.videoUri = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
-        segmentedVideoPlayer.autoPlay = true
-        // init from outside
+        segmentedPlayer.videoUrl = "http://videotest.idealmatch.com/welcome/welcome_v2.m3u8"
+        segmentedPlayer.segments = mutableListOf(10,10,10,4)
     }
 
 }

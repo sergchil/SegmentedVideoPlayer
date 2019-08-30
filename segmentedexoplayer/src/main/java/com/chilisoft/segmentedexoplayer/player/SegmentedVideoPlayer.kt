@@ -8,9 +8,6 @@ import androidx.annotation.RawRes
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.net.toUri
 import androidx.core.view.doOnLayout
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
 import com.chilisoft.segmentedexoplayer.R
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -28,11 +25,35 @@ import kotlin.math.max
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
-class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: IrisPlayerView, progressBarContainer: LinearLayoutCompat, lifecycle: Lifecycle) : LifecycleObserver {
+class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: IrisPlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
     var pauseDelay = 150L
     var segments = mutableListOf<Int>() // eg [5,15,10] in SECONDS
-    var videoUri = ""
-    var autoPlay = true
+        set(value) {
+            field = value
+
+            // convert from [5,15,10] -> [{0,5000}, {5000,20000}, {20000,30000}]
+            progressBarContainer.removeAllViews()
+            segments.mapIndexedTo(internalSegments) { index: Int, d: Int ->
+                val duration = TimeUnit.SECONDS.toMillis(d.toLong())
+                val start = if (index == 0) 0L else internalSegments[index - 1].end
+                val end = start + duration
+
+                // add progress bar to container and set max to duration (millis)
+                val progressBar = LayoutInflater.from(progressBarContainer.context).inflate(R.layout.progress_bar_item, progressBarContainer, false) as ProgressBar
+                progressBar.max = duration.toInt()
+                progressBarContainer.addView(progressBar)
+
+                Segment(start, end, duration, progressBar, index)
+            }
+
+        }
+
+    var videoUrl = ""
+        set(value) {
+            field = value
+            player.prepare(createHlsMediaSource(value))
+        }
+
 
     private val internalSegments = mutableListOf<Segment>()
     private val dataSourceFactory: DefaultDataSourceFactory
@@ -42,49 +63,50 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
     private val delayedPauseRunnable = Runnable { pause() }
 
     init {
-        lifecycle.addObserver(this) // start listeneing
         val context = playerView.context
         dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, "ExoTest"))
         val layoutInflater = LayoutInflater.from(context)
 
-
-        // convert from [5,15,10] -> [{0,5000}, {5000,20000}, {20000,30000}]
-        progressBarContainer.removeAllViews()
-        segments.mapIndexedTo(internalSegments) { index: Int, d: Int ->
-            val duration = TimeUnit.SECONDS.toMillis(d.toLong())
-            val start = if (index == 0) 0L else internalSegments[index - 1].end
-            val end = start + duration
-
-            // add progress bar to container and set max to duration (millis)
-            val progressBar = layoutInflater.inflate(R.layout.progress_bar_item, progressBarContainer, false) as ProgressBar
-            progressBar.max = duration.toInt()
-            progressBarContainer.addView(progressBar)
-
-            Segment(start, end, duration, progressBar, index)
-        }
-
-
         val videoSource = if (true) {
             createRawMediaSource(context, R.raw.test_footage)
         } else {
-            createHlsMediaSource(videoUri)
+            createHlsMediaSource(videoUrl)
         }
-
 
         player.apply {
             playerView.player = this
             prepare(videoSource)
             playWhenReady = autoPlay
+            playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE !!!
+            playerView.controller?.setProgressUpdateListener(progressUpdateListener)
 
             onReady {
-                playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE !!!
-                playerView.controller?.setProgressUpdateListener(progressUpdateListener)
+                // do something if needed
             }
 
             onPlaybackEnd {
                 internalSegments.forEach(Segment::completed)
             }
         }
+
+//        segments = mutableListOf(10,10,10)
+//        // convert from [5,15,10] -> [{0,5000}, {5000,20000}, {20000,30000}]
+//        progressBarContainer.removeAllViews()
+//        segments.mapIndexedTo(internalSegments) { index: Int, d: Int ->
+//            val duration = TimeUnit.SECONDS.toMillis(d.toLong())
+//            val start = if (index == 0) 0L else internalSegments[index - 1].end
+//            val end = start + duration
+//
+//            // add progress bar to container and set max to duration (millis)
+//            val progressBar = layoutInflater.inflate(R.layout.progress_bar_item, progressBarContainer, false) as ProgressBar
+//            progressBar.max = duration.toInt()
+//            progressBarContainer.addView(progressBar)
+//
+//            Segment(start, end, duration, progressBar, index)
+//        }
+//
+//
+
 
         // handle touches
         playerView.doOnLayout {
@@ -121,8 +143,7 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
     }
 
     // cleanup
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    fun release() {
         pause()
         player.release()
     }

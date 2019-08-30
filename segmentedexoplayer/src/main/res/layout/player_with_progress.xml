@@ -11,14 +11,14 @@
             android:background="#000"
             android:keepScreenOn="true"
             app:auto_show="true"
-            app:controller_layout_id="@null"
-            app:fastforward_increment="15000"
+            app:controller_layout_id="@layout/dummy_controller"
+            app:fastforward_increment="5000"
             app:hide_on_touch="false"
-            app:resize_mode="fit"
-            app:rewind_increment="15000"
+            app:resize_mode="zoom"
+            app:rewind_increment="5000"
             app:show_buffering="never"
             app:show_timeout="0"
-            app:use_controller="false" />
+            app:use_controller="true" />
 
     <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/progress_container"
@@ -31,11 +31,6 @@
             android:paddingRight="8dp"
             app:divider="@drawable/empty_divider"
             app:showDividers="middle">
-
-        <!--                        <include layout="@layout/progress_bar_item" />-->
-        <!--                        <include layout="@layout/progress_bar_item" />-->
-        <!--                        <include layout="@layout/progress_bar_item" />-->
-
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 </FrameLayout>

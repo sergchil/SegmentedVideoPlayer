@@ -9,8 +9,8 @@
     <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-<!--        app:controller_layout_id="@layout/custom_video_controlsl"-->
-        <com.chilisoft.segmentedexoplayer.IrisPlayerView
+        <!--        app:controller_layout_id="@layout/custom_video_controlsl"-->
+        <com.chilisoft.segmentedexoplayer.player.IrisPlayerView
                 android:id="@+id/playerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -23,30 +23,30 @@
                 app:resize_mode="fit"
                 app:rewind_increment="15000"
                 app:show_buffering="never"
-                app:use_controller="true"
-                app:show_timeout="0" />
+                app:show_timeout="0"
+                app:use_controller="true" />
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/progress_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center"
+                android:orientation="horizontal"
+                android:paddingLeft="8dp"
+                android:paddingTop="12dp"
+                android:paddingRight="8dp"
+                app:divider="@drawable/empty_divider"
+                app:showDividers="middle">
+
+            <!--                        <include layout="@layout/progress_bar_item" />-->
+            <!--                        <include layout="@layout/progress_bar_item" />-->
+            <!--                        <include layout="@layout/progress_bar_item" />-->
+
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
 
     </FrameLayout>
-
-
-    <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/progress_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingLeft="8dp"
-            android:paddingTop="12dp"
-            android:paddingRight="8dp"
-            app:divider="@drawable/empty_divider"
-            app:showDividers="middle">
-
-
-<!--                        <include layout="@layout/progress_bar_item" />-->
-<!--                        <include layout="@layout/progress_bar_item" />-->
-<!--                        <include layout="@layout/progress_bar_item" />-->
-
-
-    </androidx.appcompat.widget.LinearLayoutCompat>
 
 
 </FrameLayout>

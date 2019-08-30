@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.chilisoft.segmentedexoplayer;
+package com.chilisoft.segmentedexoplayer.player;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -44,6 +44,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.chilisoft.segmentedexoplayer.R;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ControlDispatcher;
 import com.google.android.exoplayer2.DefaultControlDispatcher;

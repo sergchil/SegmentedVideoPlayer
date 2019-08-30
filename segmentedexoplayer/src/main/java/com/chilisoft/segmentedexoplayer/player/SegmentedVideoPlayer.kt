@@ -1,4 +1,4 @@
-package com.chilisoft.segmentedexoplayer
+package com.chilisoft.segmentedexoplayer.player
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -11,6 +11,7 @@ import androidx.core.view.doOnLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
+import com.chilisoft.segmentedexoplayer.R
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource

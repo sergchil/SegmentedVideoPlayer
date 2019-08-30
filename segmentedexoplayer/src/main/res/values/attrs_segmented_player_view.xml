@@ -1,0 +1,20 @@
+<resources>
+    <declare-styleable name="SegmentedPlayerView">
+        <attr name="exampleString" format="string" />
+        <attr name="exampleDimension" format="dimension" />
+        <attr name="exampleColor" format="color" />
+        <attr name="exampleDrawable" format="color|reference" />
+
+        <attr name="progressColor" format="color|reference" />
+        <attr name="progressBackgroundColor" format="color|reference" />
+        <attr name="progressHeight" format="dimension" />
+        <attr name="progressPaddingLeft" format="dimension" />
+        <attr name="progressPaddingTop" format="dimension" />
+        <attr name="progressPaddingRight" format="dimension" />
+        <attr name="progressPaddingBottom" format="dimension" />
+        <attr name="progressDividerPadding" format="dimension" />
+        <attr name="progressCornerRadius" format="dimension" />
+        <attr name="autoPlay" format="boolean" />
+
+    </declare-styleable>
+</resources>

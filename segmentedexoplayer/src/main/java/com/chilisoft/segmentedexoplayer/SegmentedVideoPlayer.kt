@@ -1,4 +1,4 @@
-package com.chilisoft.segmentedexoplayer.player
+package com.chilisoft.segmentedexoplayer
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -8,7 +8,8 @@ import androidx.annotation.RawRes
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.net.toUri
 import androidx.core.view.doOnLayout
-import com.chilisoft.segmentedexoplayer.R
+import com.chilisoft.segmentedexoplayer.exoplayer.ExoPlayerControlView
+import com.chilisoft.segmentedexoplayer.exoplayer.ExoPlayerView
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
@@ -25,7 +26,7 @@ import kotlin.math.max
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
-class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: IrisPlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
+class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: ExoPlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
     var pauseDelay = 150L
     var segments = mutableListOf<Int>() // eg [5,15,10] in SECONDS
         set(value) {
@@ -54,18 +55,18 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
             player.prepare(createHlsMediaSource(value))
         }
 
-    var onPlaybackEnd: (()->Unit)? = null
-    var onReady: (()->Unit)? = null
-    var onPause: (()->Unit)? = null
-    var onPlay: (()->Unit)? = null
-    var onRewind: (()->Unit)? = null
-    var onForward: (()->Unit)? = null
+    var onPlaybackEnd: (() -> Unit)? = null
+    var onReady: (() -> Unit)? = null
+    var onPause: (() -> Unit)? = null
+    var onPlay: (() -> Unit)? = null
+    var onRewind: (() -> Unit)? = null
+    var onForward: (() -> Unit)? = null
 
 
     private val internalSegments = mutableListOf<Segment>()
     private val dataSourceFactory: DefaultDataSourceFactory
-    private val progressUpdateListener: IrisPlayerControlView.ProgressUpdateListener by lazy {
-        IrisPlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
+    private val progressUpdateListener: ExoPlayerControlView.ProgressUpdateListener by lazy {
+        ExoPlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
     }
     private val delayedPauseRunnable = Runnable { pause() }
 

@@ -8,8 +8,7 @@ import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.view.children
-import com.chilisoft.segmentedexoplayer.player.IrisPlayerView
-import com.chilisoft.segmentedexoplayer.player.SegmentedVideoPlayer
+import com.chilisoft.segmentedexoplayer.exoplayer.ExoPlayerView
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.SimpleExoPlayer
 import kotlinx.android.synthetic.main.player_with_progress.view.*
@@ -17,7 +16,7 @@ import kotlinx.android.synthetic.main.player_with_progress.view.*
 class SegmentedPlayerView : FrameLayout {
 
     private lateinit var player: SimpleExoPlayer
-    private lateinit var playerView: IrisPlayerView
+    private lateinit var playerView: ExoPlayerView
     private lateinit var segmentedVideoPlayer: SegmentedVideoPlayer
     private lateinit var progressContainer: LinearLayoutCompat
 
@@ -107,12 +106,12 @@ class SegmentedPlayerView : FrameLayout {
             updateProgress()
         }
 
-    var onPlaybackEnd: (()->Unit)? = null
-    var onReady: (()->Unit)? = null
-    var onPause: (()->Unit)? = null
-    var onPlay: (()->Unit)? = null
-    var onRewind: (()->Unit)? = null
-    var onForward: (()->Unit)? = null
+    var onPlaybackEnd: (() -> Unit)? = null
+    var onReady: (() -> Unit)? = null
+    var onPause: (() -> Unit)? = null
+    var onPlay: (() -> Unit)? = null
+    var onRewind: (() -> Unit)? = null
+    var onForward: (() -> Unit)? = null
 
     constructor(context: Context) : super(context) {
         init(null, 0)

@@ -5,7 +5,7 @@
     <item android:id="@android:id/background">
         <shape>
             <corners android:radius="2dp" />
-            <solid android:color="@color/seek_bar_background"/>
+            <solid android:color="@color/seek_bar_background" />
         </shape>
     </item>
 
@@ -13,7 +13,7 @@
         <clip>
             <shape>
                 <corners android:radius="2dp" />
-                <solid android:color="#0FF"/>
+                <solid android:color="#0FF" />
             </shape>
         </clip>
     </item>
@@ -22,7 +22,7 @@
         <clip>
             <shape>
                 <corners android:radius="2dp" />
-                <solid android:color="@color/seek_bar_progress"/>
+                <solid android:color="@color/seek_bar_progress" />
             </shape>
         </clip>
     </item>

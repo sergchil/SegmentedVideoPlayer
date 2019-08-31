@@ -1,2 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        package="com.chilisoft.segmentedexoplayer" />
+<manifest package="com.chilisoft.segmentedexoplayer" />

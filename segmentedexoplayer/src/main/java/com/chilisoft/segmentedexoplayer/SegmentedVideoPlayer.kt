@@ -26,7 +26,12 @@ import kotlin.math.max
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
-class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: ExoPlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
+class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: ExoPlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
+    var scaleMode: ScaleMode = ScaleMode.SCALE_MODE_FIT
+        set(value) {
+            field = value
+            playerView.resizeMode = value.value
+        }
     var pauseDelay = 150L
     var segments = mutableListOf<Int>() // eg [5,15,10] in SECONDS
         set(value) {

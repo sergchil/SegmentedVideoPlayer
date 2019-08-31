@@ -93,6 +93,14 @@ class SegmentedPlayerView : FrameLayout {
             segmentedVideoPlayer.autoPlay = value
         }
 
+    private var _scaleMode: ScaleMode = ScaleMode.SCALE_MODE_FIT
+    var scaleMode: ScaleMode
+        get() = _scaleMode
+        set(value) {
+            _scaleMode = value
+            segmentedVideoPlayer.scaleMode = value
+        }
+
     var videoUrl: String = ""
         set(value) {
             field = value
@@ -147,11 +155,13 @@ class SegmentedPlayerView : FrameLayout {
         _progressDividerPadding = a.getDimensionPixelSize(R.styleable.SegmentedPlayerView_progressDividerPadding, progressDividerPadding)
         _progressCornerRadius = a.getDimensionPixelSize(R.styleable.SegmentedPlayerView_progressCornerRadius, progressCornerRadius)
         _autoPlay = a.getBoolean(R.styleable.SegmentedPlayerView_autoPlay, autoPlay)
+        _scaleMode = ScaleMode.valueOf(a.getInt(R.styleable.SegmentedPlayerView_scale_mode, scaleMode.value))
 
         a.recycle()
 
         player = ExoPlayerFactory.newSimpleInstance(context)
         segmentedVideoPlayer = SegmentedVideoPlayer(player, playerView, progress_container, _autoPlay)
+        segmentedVideoPlayer.scaleMode = _scaleMode
         segmentedVideoPlayer.onPlaybackEnd = onPlaybackEnd
         segmentedVideoPlayer.onReady = onReady
         segmentedVideoPlayer.onPause = onPause

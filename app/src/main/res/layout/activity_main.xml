@@ -20,7 +20,8 @@
             app:progressPaddingBottom="0dp"
             app:progressPaddingLeft="4dp"
             app:progressPaddingRight="4dp"
-            app:progressPaddingTop="12dp">
+            app:progressPaddingTop="12dp"
+            app:scale_mode="fit">
 
     </com.chilisoft.segmentedexoplayer.SegmentedPlayerView>
 

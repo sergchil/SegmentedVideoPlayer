@@ -14,7 +14,7 @@
             app:controller_layout_id="@layout/dummy_controller"
             app:fastforward_increment="5000"
             app:hide_on_touch="false"
-            app:resize_mode="zoom"
+            app:resize_mode="fit"
             app:rewind_increment="5000"
             app:show_buffering="never"
             app:show_timeout="0"

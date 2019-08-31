@@ -1,10 +1,5 @@
 <resources>
     <declare-styleable name="SegmentedPlayerView">
-        <attr name="exampleString" format="string" />
-        <attr name="exampleDimension" format="dimension" />
-        <attr name="exampleColor" format="color" />
-        <attr name="exampleDrawable" format="color|reference" />
-
         <attr name="progressColor" format="color|reference" />
         <attr name="progressBackgroundColor" format="color|reference" />
         <attr name="progressHeight" format="dimension" />
@@ -15,6 +10,14 @@
         <attr name="progressDividerPadding" format="dimension" />
         <attr name="progressCornerRadius" format="dimension" />
         <attr name="autoPlay" format="boolean" />
+
+        <attr name="scale_mode" format="enum">
+            <enum name="fit" value="0"/>
+            <enum name="fixed_width" value="1"/>
+            <enum name="fixed_height" value="2"/>
+            <enum name="fill" value="3"/>
+            <enum name="zoom" value="4"/>
+        </attr>
 
     </declare-styleable>
 </resources>

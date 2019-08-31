@@ -54,6 +54,13 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
             player.prepare(createHlsMediaSource(value))
         }
 
+    var onPlaybackEnd: (()->Unit)? = null
+    var onReady: (()->Unit)? = null
+    var onPause: (()->Unit)? = null
+    var onPlay: (()->Unit)? = null
+    var onRewind: (()->Unit)? = null
+    var onForward: (()->Unit)? = null
+
 
     private val internalSegments = mutableListOf<Segment>()
     private val dataSourceFactory: DefaultDataSourceFactory
@@ -65,48 +72,24 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
     init {
         val context = playerView.context
         dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, "ExoTest"))
-        val layoutInflater = LayoutInflater.from(context)
-
-        val videoSource = if (true) {
-            createRawMediaSource(context, R.raw.test_footage)
-        } else {
-            createHlsMediaSource(videoUrl)
-        }
 
         player.apply {
             playerView.player = this
-            prepare(videoSource)
-            playWhenReady = autoPlay
-            playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE !!!
+            playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE if value is small !!!
             playerView.controller?.setProgressUpdateListener(progressUpdateListener)
+            prepare(createHlsMediaSource(videoUrl))
+            playWhenReady = autoPlay
 
             onReady {
                 // do something if needed
+                onReady?.invoke()
             }
 
             onPlaybackEnd {
                 internalSegments.forEach(Segment::completed)
+                onPlaybackEnd?.invoke()
             }
         }
-
-//        segments = mutableListOf(10,10,10)
-//        // convert from [5,15,10] -> [{0,5000}, {5000,20000}, {20000,30000}]
-//        progressBarContainer.removeAllViews()
-//        segments.mapIndexedTo(internalSegments) { index: Int, d: Int ->
-//            val duration = TimeUnit.SECONDS.toMillis(d.toLong())
-//            val start = if (index == 0) 0L else internalSegments[index - 1].end
-//            val end = start + duration
-//
-//            // add progress bar to container and set max to duration (millis)
-//            val progressBar = layoutInflater.inflate(R.layout.progress_bar_item, progressBarContainer, false) as ProgressBar
-//            progressBar.max = duration.toInt()
-//            progressBarContainer.addView(progressBar)
-//
-//            Segment(start, end, duration, progressBar, index)
-//        }
-//
-//
-
 
         // handle touches
         playerView.doOnLayout {
@@ -138,14 +121,14 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
                 true
             }
         }
-
-
     }
 
     // cleanup
     fun release() {
         pause()
         player.release()
+        internalSegments.clear()
+        segments.clear()
     }
 
     private fun createHlsMediaSource(url: String): MediaSource {
@@ -178,10 +161,12 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
 
     private fun pause() {
         player.playWhenReady = false
+        onPause?.invoke()
     }
 
     private fun play() {
         player.playWhenReady = true
+        onPlay?.invoke()
     }
 
     private fun forward() {
@@ -194,10 +179,10 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
         } ?: run {
             player.seekTo(segment.end)
         }
+        onForward?.invoke()
 
     }
 
-    // todo improve the logic of quick tapping
     private fun rewind() {
         val currentSegment = findSegment(player.currentPosition)
 
@@ -211,6 +196,7 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, playerView: Iris
         val previousSegment = internalSegments[previousSegmentIndex]
 
         player.seekTo(previousSegment.start)
+        onRewind?.invoke()
 
     }
 

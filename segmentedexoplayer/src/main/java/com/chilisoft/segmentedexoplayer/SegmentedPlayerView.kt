@@ -107,6 +107,13 @@ class SegmentedPlayerView : FrameLayout {
             updateProgress()
         }
 
+    var onPlaybackEnd: (()->Unit)? = null
+    var onReady: (()->Unit)? = null
+    var onPause: (()->Unit)? = null
+    var onPlay: (()->Unit)? = null
+    var onRewind: (()->Unit)? = null
+    var onForward: (()->Unit)? = null
+
     constructor(context: Context) : super(context) {
         init(null, 0)
     }
@@ -146,7 +153,14 @@ class SegmentedPlayerView : FrameLayout {
 
         player = ExoPlayerFactory.newSimpleInstance(context)
         segmentedVideoPlayer = SegmentedVideoPlayer(player, playerView, progress_container, _autoPlay)
+        segmentedVideoPlayer.onPlaybackEnd = onPlaybackEnd
+        segmentedVideoPlayer.onReady = onReady
+        segmentedVideoPlayer.onPause = onPause
+        segmentedVideoPlayer.onPlay = onPlay
+        segmentedVideoPlayer.onRewind = onRewind
+        segmentedVideoPlayer.onForward = onForward
         updateProgress()
+
     }
 
 

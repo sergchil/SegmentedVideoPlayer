@@ -1,6 +1,6 @@
 package com.chilisoft.segmentedexoplayer
 
-enum class ScaleMode(val value:Int) {
+enum class ScaleMode(val value: Int) {
     SCALE_MODE_FIT(0),
     SCALE_MODE_FIXED_WIDTH(1),
     SCALE_MODE_FIXED_HEIGHT(2),

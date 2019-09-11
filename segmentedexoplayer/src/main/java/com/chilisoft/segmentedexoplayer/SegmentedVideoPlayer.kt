@@ -1,24 +1,21 @@
 package com.chilisoft.segmentedexoplayer
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.widget.ProgressBar
-import androidx.annotation.RawRes
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.net.toUri
 import androidx.core.view.doOnLayout
-import com.chilisoft.segmentedexoplayer.exoplayer.ExoPlayerControlView
-import com.chilisoft.segmentedexoplayer.exoplayer.ExoPlayerView
+import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
-import com.google.android.exoplayer2.upstream.DataSpec
+import com.google.android.exoplayer2.ui.PlayerControlView
+import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.upstream.RawResourceDataSource
 import com.google.android.exoplayer2.util.Util
+import kotlinx.android.synthetic.main.dummy_controller.view.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
@@ -26,7 +23,7 @@ import kotlin.math.max
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
-class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: ExoPlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
+class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val playerView: PlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
     var scaleMode: ScaleMode = ScaleMode.SCALE_MODE_FIT
         set(value) {
             field = value
@@ -62,6 +59,7 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: 
 
     var onPlaybackEnd: (() -> Unit)? = null
     var onReady: (() -> Unit)? = null
+    var onError: (() -> Unit)? = null
     var onPause: (() -> Unit)? = null
     var onPlay: (() -> Unit)? = null
     var onRewind: (() -> Unit)? = null
@@ -70,8 +68,8 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: 
 
     private val internalSegments = mutableListOf<Segment>()
     private val dataSourceFactory: DefaultDataSourceFactory
-    private val progressUpdateListener: ExoPlayerControlView.ProgressUpdateListener by lazy {
-        ExoPlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
+    private val progressUpdateListener: PlayerControlView.ProgressUpdateListener by lazy {
+        PlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
     }
     private val delayedPauseRunnable = Runnable { pause() }
 
@@ -81,14 +79,19 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: 
 
         player.apply {
             playerView.player = this
-            playerView.controller?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE if value is small !!!
-            playerView.controller?.setProgressUpdateListener(progressUpdateListener)
+            (playerView.exo_controller as? PlayerControlView)?.setProgressUpdateListener(progressUpdateListener)
+//            (playerView.exo_controller as? PlayerControlView)?.setTimeBarMinUpdateInterval(1000) // HIGH CPU USAGE if value is small !!!
+
             prepare(createHlsMediaSource(videoUrl))
             playWhenReady = autoPlay
 
             onReady {
                 // do something if needed
                 onReady?.invoke()
+            }
+
+            onError {
+                onError?.invoke()
             }
 
             onPlaybackEnd {
@@ -141,12 +144,6 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: 
         return HlsMediaSource.Factory(dataSourceFactory).createMediaSource(url.toUri())
     }
 
-    private fun createRawMediaSource(context: Context, @RawRes id: Int): MediaSource? {
-        val rawDataSource = RawResourceDataSource(context)
-        rawDataSource.open(DataSpec(RawResourceDataSource.buildRawResourceUri(R.raw.test_footage)))
-        return ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(rawDataSource.uri ?: return null)
-    }
-
     private fun findSegment(playerPosition: Long): Segment? = internalSegments.firstOrNull { playerPosition in it.start until it.end }
 
     private fun onUpdateProgress(position: Long) {
@@ -165,12 +162,12 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: 
         segment.setProgress(progress)
     }
 
-    private fun pause() {
+    internal fun pause() {
         player.playWhenReady = false
         onPause?.invoke()
     }
 
-    private fun play() {
+    internal fun play() {
         player.playWhenReady = true
         onPlay?.invoke()
     }
@@ -214,6 +211,16 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, val playerView: 
                 if (playbackState == Player.STATE_READY) {
                     listener()
                 }
+            }
+        })
+    }
+
+    private fun SimpleExoPlayer.onError(listener: SimpleExoPlayer.() -> Unit) {
+
+        this.addListener(object : Player.EventListener {
+            override fun onPlayerError(error: ExoPlaybackException?) {
+                super.onPlayerError(error)
+                listener()
             }
         })
     }

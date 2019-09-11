@@ -8,15 +8,15 @@ import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.view.children
-import com.chilisoft.segmentedexoplayer.exoplayer.ExoPlayerView
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.ui.PlayerView
 import kotlinx.android.synthetic.main.player_with_progress.view.*
 
 class SegmentedPlayerView : FrameLayout {
 
     private lateinit var player: SimpleExoPlayer
-    private lateinit var playerView: ExoPlayerView
+    private lateinit var playerView: PlayerView
     private lateinit var segmentedVideoPlayer: SegmentedVideoPlayer
     private lateinit var progressContainer: LinearLayoutCompat
 
@@ -115,11 +115,47 @@ class SegmentedPlayerView : FrameLayout {
         }
 
     var onPlaybackEnd: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onPlaybackEnd = value
+        }
     var onReady: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onReady = value
+        }
+
+    var onError: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onError = value
+        }
+
     var onPause: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onPause = value
+        }
+
     var onPlay: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onPlay = value
+        }
     var onRewind: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onRewind = value
+        }
     var onForward: (() -> Unit)? = null
+        set(value) {
+            field = value
+            segmentedVideoPlayer.onForward = value
+        }
+
+    fun pause() = segmentedVideoPlayer.pause()
+
+    fun play() = segmentedVideoPlayer.play()
 
     constructor(context: Context) : super(context) {
         init(null, 0)

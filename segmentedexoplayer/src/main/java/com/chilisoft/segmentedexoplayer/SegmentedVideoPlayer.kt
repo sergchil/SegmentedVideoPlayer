@@ -6,6 +6,7 @@ import android.widget.ProgressBar
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.net.toUri
 import androidx.core.view.doOnLayout
+import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -18,12 +19,22 @@ import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.dummy_controller.view.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
 
 /**
  * Created by Sergey Chilingaryan on 2019-08-26.
  */
 class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val playerView: PlayerView, private val progressBarContainer: LinearLayoutCompat, var autoPlay: Boolean = true) {
+
+    private val playbackEndCalled = AtomicBoolean(false) // detect player end and invoke callback only once
+    private val internalSegments = mutableListOf<Segment>()
+    private val dataSourceFactory: DefaultDataSourceFactory
+    private val progressUpdateListener: PlayerControlView.ProgressUpdateListener by lazy {
+        PlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
+    }
+    private val delayedPauseRunnable = Runnable { pause() }
+
     var scaleMode: ScaleMode = ScaleMode.SCALE_MODE_FIT
         set(value) {
             field = value
@@ -57,6 +68,7 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
             player.prepare(createHlsMediaSource(value))
         }
 
+    // Listeners
     var onPlaybackEnd: (() -> Unit)? = null
     var onReady: (() -> Unit)? = null
     var onError: (() -> Unit)? = null
@@ -64,14 +76,6 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
     var onPlay: (() -> Unit)? = null
     var onRewind: (() -> Unit)? = null
     var onForward: (() -> Unit)? = null
-
-
-    private val internalSegments = mutableListOf<Segment>()
-    private val dataSourceFactory: DefaultDataSourceFactory
-    private val progressUpdateListener: PlayerControlView.ProgressUpdateListener by lazy {
-        PlayerControlView.ProgressUpdateListener { position, _ -> onUpdateProgress(position) }
-    }
-    private val delayedPauseRunnable = Runnable { pause() }
 
     init {
         val context = playerView.context
@@ -95,8 +99,7 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
             }
 
             onPlaybackEnd {
-                internalSegments.forEach(Segment::completed)
-                onPlaybackEnd?.invoke()
+                playbackEnd()
             }
         }
 
@@ -132,12 +135,33 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
         }
     }
 
+    // called once
+    private fun playbackEnd() {
+        if (playbackEndCalled.get()) return
+
+        internalSegments.forEach(Segment::completed)
+        onPlaybackEnd?.let {
+            it.invoke()
+            playbackEndCalled.set(true)
+        }
+    }
+
     // cleanup
     fun release() {
         pause()
+        (playerView.exo_controller as? PlayerControlView)?.setProgressUpdateListener(null)
+        playerView.player = null
+        playerView.setOnTouchListener(null)
         player.release()
         internalSegments.clear()
         segments.clear()
+        onPlaybackEnd = null
+        onReady = null
+        onError = null
+        onPause = null
+        onPlay = null
+        onRewind = null
+        onForward = null
     }
 
     private fun createHlsMediaSource(url: String): MediaSource {
@@ -147,7 +171,15 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
     private fun findSegment(playerPosition: Long): Segment? = internalSegments.firstOrNull { playerPosition in it.start until it.end }
 
     private fun onUpdateProgress(position: Long) {
+        if (player.duration == C.TIME_UNSET) return
+
+        if (position >= player.duration) {
+            playbackEnd()
+            return
+        }
+
         val segment = findSegment(position) ?: return
+
         val progress = position - segment.start
 
         // if seeks forward from middle, set to max
@@ -160,6 +192,8 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
         }
 
         segment.setProgress(progress)
+
+        playbackEndCalled.set(false)
     }
 
     internal fun pause() {
@@ -250,9 +284,4 @@ class SegmentedVideoPlayer(private val player: SimpleExoPlayer, private val play
             progressBar.progress = progress.toInt()
         }
     }
-
-    fun <T> WeakReference<T>.safe(body: T.() -> Unit) {
-        this.get()?.body()
-    }
-
 }
